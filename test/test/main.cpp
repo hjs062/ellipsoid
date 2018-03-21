@@ -9,10 +9,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "linmath.h"
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 static const struct
 {
@@ -111,11 +113,14 @@ int main(void)
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
                           sizeof(float) * 5, (void*) (sizeof(float) * 2));
     
+    const glm::mat4 & matProjection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.f);
+    const glm::mat4 & matView = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    
     while (!glfwWindowShouldClose(window))
     {
         float ratio;
         int width, height;
-        mat4x4 m, p, mvp;
         
         glfwGetFramebufferSize(window, &width, &height);
         ratio = width / (float) height;
@@ -123,13 +128,11 @@ int main(void)
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        mat4x4_identity(m);
-        mat4x4_rotate_Z(m, m, (float) glfwGetTime());
-        mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        mat4x4_mul(mvp, p, m);
+        const glm::mat4 & matModel = glm::rotate(glm::mat4(), (float) glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        const glm::mat4 & matMVP = matProjection * matView * matModel;
         
         glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) mvp);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &matMVP[0][0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         
         glfwSwapBuffers(window);
