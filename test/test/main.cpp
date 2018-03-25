@@ -18,17 +18,6 @@
 
 #include "../../include/ellipsoid.hpp"
 
-static const struct
-{
-    float x, y;
-    float r, g, b;
-} vertices[3] =
-{
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f }
-};
-
 static const char* vertex_shader_text =
 "uniform mat4 MVP;\n"
 "attribute vec3 vCol;\n"
@@ -60,12 +49,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main(void)
 {
-    JS::Geo::Ellipsoid e(2, 3, 2);
+    JS::Geo::Ellipsoid e(4, 3, 2);
     
     std::vector<glm::vec3> vecPosition;
     e.getPositionsBySampling(vecPosition, 5, 6);
+    
     GLFWwindow* window;
-    GLuint vertex_buffer, vertex_shader, fragment_shader, program;
+    GLuint vertex_buffer, vertex_buffer_axis, vertex_shader, fragment_shader, program;
     GLint mvp_location, vpos_location, vcol_location;
     
     glfwSetErrorCallback(error_callback);
@@ -95,6 +85,19 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vecPosition[0]) * vecPosition.size(), vecPosition.data(), GL_STATIC_DRAW);
     
+    const float vertex_axis[] =
+    {
+        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        9.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 9.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 9.0f, 0.0f, 0.0f, 1.0f
+    };
+    glGenBuffers(1, &vertex_buffer_axis);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_axis);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_axis), vertex_axis, GL_STATIC_DRAW);
+    
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
     glCompileShader(vertex_shader);
@@ -112,15 +115,10 @@ int main(void)
     vpos_location = glGetAttribLocation(program, "vPos");
     vcol_location = glGetAttribLocation(program, "vCol");
     
+    glUseProgram(program);
+    
+    const glm::mat4 & matView = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
-    
-    glDisableVertexAttribArray(vcol_location);
-    glVertexAttrib3f(vcol_location, 1.0f, 0.5f, 0.8f);
-    
-    const glm::mat4 & matProjection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    const glm::mat4 & matView = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
     
     while (!glfwWindowShouldClose(window))
     {
@@ -133,12 +131,31 @@ int main(void)
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        const glm::mat4 & matModel = glm::rotate(glm::mat4(), (float) glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-        const glm::mat4 & matMVP = matProjection * matView * matModel;
+        const glm::mat4 & matProjection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 100.f);
+        const glm::mat4 & matVP = matProjection * matView;
         
-        glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &matMVP[0][0]);
+        // ellipsoid
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+        const glm::mat4 & matModelEllipsoid = glm::rotate(glm::mat4(), (float) glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        const glm::mat4 & matMVPEllipsoid = matProjection * matView * matModelEllipsoid;
+        
+        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+        
+        glDisableVertexAttribArray(vcol_location);
+        glVertexAttrib3f(vcol_location, 1.0f, 1.0f, 1.0f);
+        
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &matMVPEllipsoid[0][0]);
         glDrawArrays(GL_LINE_STRIP, 0, vecPosition.size());
+        
+        // axis
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_axis);
+        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, 24, (void*) 0);
+        
+        glEnableVertexAttribArray(vcol_location);
+        glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,  24, (void*)12);
+        
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &matVP[0][0]);
+        glDrawArrays(GL_LINES, 0, 6);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
