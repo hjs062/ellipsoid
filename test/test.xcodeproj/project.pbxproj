@@ -37,6 +37,7 @@
 		6E414838205FF1FC00EDEB9B /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		6E41483A205FF22C00EDEB9B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		6E41483C205FF28000EDEB9B /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		6EBB7D392062A85F0017BEB4 /* ellipsoid.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ellipsoid.hpp; path = ../../include/ellipsoid.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +75,7 @@
 		6E414827205FEFC400EDEB9B /* test */ = {
 			isa = PBXGroup;
 			children = (
+				6EBB7D392062A85F0017BEB4 /* ellipsoid.hpp */,
 				6E41482F205FF09000EDEB9B /* glad.c */,
 				6E414828205FEFC400EDEB9B /* main.cpp */,
 			);
